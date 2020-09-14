@@ -23,7 +23,7 @@ import lombok.Setter;
 
 /**
  * 基于Zookeeper的注册中心配置.
- * 
+ *
  * @author zhangliang
  * @author caohao
  */
@@ -31,7 +31,7 @@ import lombok.Setter;
 @Setter
 @RequiredArgsConstructor
 public final class ZookeeperConfiguration {
-    
+
     /**
      * 连接Zookeeper服务器的列表.
      * 包括IP地址和端口号.
@@ -39,41 +39,41 @@ public final class ZookeeperConfiguration {
      * 如: host1:2181,host2:2181
      */
     private final String serverLists;
-    
+
     /**
      * 命名空间.
      */
-    private final String namespace;
-    
+    private final String namespace;//会基于这个命名空间生成一个根节点。基于这个配置生成的zk客户端生成的节点都是命名空间的子节点
+
     /**
      * 等待重试的间隔时间的初始值.
      * 单位毫秒.
      */
     private int baseSleepTimeMilliseconds = 1000;
-    
+
     /**
      * 等待重试的间隔时间的最大值.
      * 单位毫秒.
      */
     private int maxSleepTimeMilliseconds = 3000;
-    
+
     /**
      * 最大重试次数.
      */
     private int maxRetries = 3;
-    
+
     /**
      * 会话超时时间.
      * 单位毫秒.
      */
     private int sessionTimeoutMilliseconds;
-    
+
     /**
      * 连接超时时间.
      * 单位毫秒.
      */
     private int connectionTimeoutMilliseconds;
-    
+
     /**
      * 连接Zookeeper的权限令牌.
      * 缺省为不需要权限验证.

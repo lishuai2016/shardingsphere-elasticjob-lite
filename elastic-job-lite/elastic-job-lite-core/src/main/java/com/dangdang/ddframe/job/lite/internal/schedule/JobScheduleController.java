@@ -30,37 +30,37 @@ import org.quartz.TriggerKey;
 
 /**
  * 作业调度控制器.
- * 
+ *
  * @author zhangliang
  */
 @RequiredArgsConstructor
-public final class JobScheduleController {
-    
-    private final Scheduler scheduler;
-    
+public final class JobScheduleController {//本地调度的封装quartz中对应的三个角色：Scheduler、JobDetail、trigger
+
+    private final Scheduler scheduler;//quartz中的调度器
+
     private final JobDetail jobDetail;
-    
-    private final String triggerIdentity;
-    
+
+    private final String triggerIdentity;//jobname？
+
     /**
      * 调度作业.
-     * 
+     *
      * @param cron CRON表达式
      */
-    public void scheduleJob(final String cron) {
+    public void scheduleJob(final String cron) {//开启quartz作业调度器的入口
         try {
             if (!scheduler.checkExists(jobDetail.getKey())) {
-                scheduler.scheduleJob(jobDetail, createTrigger(cron));
+                scheduler.scheduleJob(jobDetail, createTrigger(cron));//
             }
-            scheduler.start();
+            scheduler.start();//开启调度
         } catch (final SchedulerException ex) {
             throw new JobSystemException(ex);
         }
     }
-    
+
     /**
      * 重新调度作业.
-     * 
+     *
      * @param cron CRON表达式
      */
     public synchronized void rescheduleJob(final String cron) {
@@ -73,14 +73,14 @@ public final class JobScheduleController {
             throw new JobSystemException(ex);
         }
     }
-    
-    private CronTrigger createTrigger(final String cron) {
+
+    private CronTrigger createTrigger(final String cron) {//创建一个触发器
         return TriggerBuilder.newTrigger().withIdentity(triggerIdentity).withSchedule(CronScheduleBuilder.cronSchedule(cron).withMisfireHandlingInstructionDoNothing()).build();
     }
-    
+
     /**
      * 判断作业是否暂停.
-     * 
+     *
      * @return 作业是否暂停
      */
     public synchronized boolean isPaused() {
@@ -90,7 +90,7 @@ public final class JobScheduleController {
             throw new JobSystemException(ex);
         }
     }
-    
+
     /**
      * 暂停作业.
      */
@@ -103,7 +103,7 @@ public final class JobScheduleController {
             throw new JobSystemException(ex);
         }
     }
-    
+
     /**
      * 恢复作业.
      */
@@ -116,7 +116,7 @@ public final class JobScheduleController {
             throw new JobSystemException(ex);
         }
     }
-    
+
     /**
      * 立刻启动作业.
      */
@@ -129,7 +129,7 @@ public final class JobScheduleController {
             throw new JobSystemException(ex);
         }
     }
-    
+
     /**
      * 关闭调度器.
      */

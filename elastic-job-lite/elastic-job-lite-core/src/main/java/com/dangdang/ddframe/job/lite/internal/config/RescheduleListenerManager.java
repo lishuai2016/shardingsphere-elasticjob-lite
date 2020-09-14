@@ -25,29 +25,29 @@ import org.apache.curator.framework.recipes.cache.TreeCacheEvent.Type;
 
 /**
  * 重调度监听管理器.
- * 
+ *
  * @author caohao
  * @author zhangliang
  */
 public final class RescheduleListenerManager extends AbstractListenerManager {
-    
+
     private final ConfigurationNode configNode;
-    
+
     private final String jobName;
-    
+
     public RescheduleListenerManager(final CoordinatorRegistryCenter regCenter, final String jobName) {
         super(regCenter, jobName);
         this.jobName = jobName;
         configNode = new ConfigurationNode(jobName);
     }
-    
+
     @Override
     public void start() {
         addDataListener(new CronSettingAndJobEventChangedJobListener());
     }
-    
-    class CronSettingAndJobEventChangedJobListener extends AbstractJobListener {
-        
+
+    class CronSettingAndJobEventChangedJobListener extends AbstractJobListener {//配置节点内容有变化，基于cron重新调度
+        //jobName/config
         @Override
         protected void dataChanged(final String path, final Type eventType, final String data) {
             if (configNode.isConfigPath(path) && Type.NODE_UPDATED == eventType && !JobRegistry.getInstance().isShutdown(jobName)) {

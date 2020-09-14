@@ -28,19 +28,19 @@ import java.util.Map;
 
 /**
  * 基于平均分配算法的分片策略.
- * 
+ *
  * <p>
  * 如果分片不能整除, 则不能整除的多余分片将依次追加到序号小的服务器.
- * 如: 
+ * 如:
  * 1. 如果有3台服务器, 分成9片, 则每台服务器分到的分片是: 1=[0,1,2], 2=[3,4,5], 3=[6,7,8].
  * 2. 如果有3台服务器, 分成8片, 则每台服务器分到的分片是: 1=[0,1,6], 2=[2,3,7], 3=[4,5].
  * 3. 如果有3台服务器, 分成10片, 则每台服务器分到的分片是: 1=[0,1,2,9], 2=[3,4,5], 3=[6,7,8].
  * </p>
- * 
+ *
  * @author zhangliang
  */
-public final class AverageAllocationJobShardingStrategy implements JobShardingStrategy {
-    
+public final class AverageAllocationJobShardingStrategy implements JobShardingStrategy {//默认的分片策略
+
     @Override
     public Map<JobInstance, List<Integer>> sharding(final List<JobInstance> jobInstances, final String jobName, final int shardingTotalCount) {
         if (jobInstances.isEmpty()) {
@@ -50,13 +50,13 @@ public final class AverageAllocationJobShardingStrategy implements JobShardingSt
         addAliquant(jobInstances, shardingTotalCount, result);
         return result;
     }
-    
+    //均分的
     private Map<JobInstance, List<Integer>> shardingAliquot(final List<JobInstance> shardingUnits, final int shardingTotalCount) {
         Map<JobInstance, List<Integer>> result = new LinkedHashMap<>(shardingTotalCount, 1);
         int itemCountPerSharding = shardingTotalCount / shardingUnits.size();
         int count = 0;
         for (JobInstance each : shardingUnits) {
-            List<Integer> shardingItems = new ArrayList<>(itemCountPerSharding + 1);
+            List<Integer> shardingItems = new ArrayList<>(itemCountPerSharding + 1);//每个分组的分片数最大为平均值+1
             for (int i = count * itemCountPerSharding; i < (count + 1) * itemCountPerSharding; i++) {
                 shardingItems.add(i);
             }
@@ -65,9 +65,9 @@ public final class AverageAllocationJobShardingStrategy implements JobShardingSt
         }
         return result;
     }
-    
+    //追加没有分配完的
     private void addAliquant(final List<JobInstance> shardingUnits, final int shardingTotalCount, final Map<JobInstance, List<Integer>> shardingResults) {
-        int aliquant = shardingTotalCount % shardingUnits.size();
+        int aliquant = shardingTotalCount % shardingUnits.size();//剩余的
         int count = 0;
         for (Map.Entry<JobInstance, List<Integer>> entry : shardingResults.entrySet()) {
             if (count < aliquant) {

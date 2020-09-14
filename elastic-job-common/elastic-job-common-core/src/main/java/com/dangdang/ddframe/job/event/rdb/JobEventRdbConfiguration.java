@@ -28,18 +28,18 @@ import java.io.Serializable;
 import java.sql.SQLException;
 
 /**
- * 作业数据库事件配置.
+ * 作业数据库事件配置. 功能：
  *
  * @author caohao
  */
 @RequiredArgsConstructor
 @Getter
 public final class JobEventRdbConfiguration extends JobEventRdbIdentity implements JobEventConfiguration, Serializable {
-    
+
     private static final long serialVersionUID = 3344410699286435226L;
-    
+
     private final transient DataSource dataSource;
-    
+
     @Override
     public JobEventListener createJobEventListener() throws JobEventListenerConfigurationException {
         try {

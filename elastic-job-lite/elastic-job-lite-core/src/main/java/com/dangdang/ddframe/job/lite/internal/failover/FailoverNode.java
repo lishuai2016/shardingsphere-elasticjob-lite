@@ -23,40 +23,40 @@ import com.dangdang.ddframe.job.lite.internal.storage.JobNodePath;
 
 /**
  * 失效转移节点路径.
- * 
+ *
  * @author zhangliang
  */
 public final class FailoverNode {
-    
+
     static final String FAILOVER = "failover";
-    
+
     static final String LEADER_ROOT = LeaderNode.ROOT + "/" + FAILOVER;
-    
+
     static final String ITEMS_ROOT = LEADER_ROOT + "/items";
-    
+
     static final String ITEMS = ITEMS_ROOT + "/%s";
-    
+
     static final String LATCH = LEADER_ROOT + "/latch";
-    
-    private static final String EXECUTION_FAILOVER = ShardingNode.ROOT + "/%s/" + FAILOVER;
-    
+
+    private static final String EXECUTION_FAILOVER = ShardingNode.ROOT + "/%s/" + FAILOVER;//sharding/%s/failover
+
     private final JobNodePath jobNodePath;
-    
+
     public FailoverNode(final String jobName) {
         jobNodePath = new JobNodePath(jobName);
     }
-    
+
     static String getItemsNode(final int item) {
         return String.format(ITEMS, item);
     }
-    
+
     static String getExecutionFailoverNode(final int item) {
         return String.format(EXECUTION_FAILOVER, item);
     }
-    
+
     /**
      * 根据失效转移执行路径获取分片项.
-     * 
+     *
      * @param path 失效转移执行路径
      * @return 分片项, 不是失效转移执行路径获则返回null
      */
@@ -66,7 +66,7 @@ public final class FailoverNode {
         }
         return Integer.parseInt(path.substring(jobNodePath.getFullPath(ShardingNode.ROOT).length() + 1, path.lastIndexOf(FailoverNode.FAILOVER) - 1));
     }
-    
+
     private boolean isFailoverPath(final String path) {
         return path.startsWith(jobNodePath.getFullPath(ShardingNode.ROOT)) && path.endsWith(FailoverNode.FAILOVER);
     }

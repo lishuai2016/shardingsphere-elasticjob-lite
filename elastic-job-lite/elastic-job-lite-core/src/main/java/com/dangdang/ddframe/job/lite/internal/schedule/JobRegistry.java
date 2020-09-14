@@ -27,28 +27,28 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 作业注册表.
- * 
+ *
  * @author zhangliang
  * @author caohao
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JobRegistry {
-    
+
     private static volatile JobRegistry instance;
-    
-    private Map<String, JobScheduleController> schedulerMap = new ConcurrentHashMap<>();
-    
-    private Map<String, CoordinatorRegistryCenter> regCenterMap = new ConcurrentHashMap<>();
-    
-    private Map<String, JobInstance> jobInstanceMap = new ConcurrentHashMap<>();
-    
+
+    private Map<String, JobScheduleController> schedulerMap = new ConcurrentHashMap<>();//维护jobName和JobScheduleController之间的映射
+
+    private Map<String, CoordinatorRegistryCenter> regCenterMap = new ConcurrentHashMap<>();//维护jobName和注册中心之间的映射
+
+    private Map<String, JobInstance> jobInstanceMap = new ConcurrentHashMap<>();//作业map，JobInstance对应本地jobname对应的执行机器ip
+
     private Map<String, Boolean> jobRunningMap = new ConcurrentHashMap<>();
-    
-    private Map<String, Integer> currentShardingTotalCountMap = new ConcurrentHashMap<>();
-    
+
+    private Map<String, Integer> currentShardingTotalCountMap = new ConcurrentHashMap<>();//维护jobName和分片总数之间的关系
+
     /**
      * 获取作业注册表实例.
-     * 
+     *
      * @return 作业注册表实例
      */
     public static JobRegistry getInstance() {
@@ -61,10 +61,10 @@ public final class JobRegistry {
         }
         return instance;
     }
-    
+
     /**
      * 添加作业调度控制器.
-     * 
+     *
      * @param jobName 作业名称
      * @param jobScheduleController 作业调度控制器
      * @param regCenter 注册中心
@@ -74,17 +74,17 @@ public final class JobRegistry {
         regCenterMap.put(jobName, regCenter);
         regCenter.addCacheData("/" + jobName);
     }
-    
+
     /**
      * 获取作业调度控制器.
-     * 
+     *
      * @param jobName 作业名称
      * @return 作业调度控制器
      */
     public JobScheduleController getJobScheduleController(final String jobName) {
         return schedulerMap.get(jobName);
     }
-    
+
     /**
      * 获取作业注册中心.
      *
@@ -94,7 +94,7 @@ public final class JobRegistry {
     public CoordinatorRegistryCenter getRegCenter(final String jobName) {
         return regCenterMap.get(jobName);
     }
-    
+
     /**
      * 添加作业实例.
      *
@@ -104,7 +104,7 @@ public final class JobRegistry {
     public void addJobInstance(final String jobName, final JobInstance jobInstance) {
         jobInstanceMap.put(jobName, jobInstance);
     }
-    
+
     /**
      * 获取作业运行实例.
      *
@@ -114,10 +114,10 @@ public final class JobRegistry {
     public JobInstance getJobInstance(final String jobName) {
         return jobInstanceMap.get(jobName);
     }
-    
+
     /**
      * 获取作业是否在运行.
-     * 
+     *
      * @param jobName 作业名称
      * @return 作业是否在运行
      */
@@ -125,17 +125,17 @@ public final class JobRegistry {
         Boolean result = jobRunningMap.get(jobName);
         return null == result ? false : result;
     }
-    
+
     /**
      * 设置作业是否在运行.
-     * 
+     *
      * @param jobName 作业名称
      * @param isRunning 作业是否在运行
      */
     public void setJobRunning(final String jobName, final boolean isRunning) {
         jobRunningMap.put(jobName, isRunning);
     }
-    
+
     /**
      * 获取当前分片总数.
      *
@@ -146,7 +146,7 @@ public final class JobRegistry {
         Integer result = currentShardingTotalCountMap.get(jobName);
         return null == result ? 0 : result;
     }
-    
+
     /**
      * 设置当前分片总数.
      *
@@ -156,10 +156,10 @@ public final class JobRegistry {
     public void setCurrentShardingTotalCount(final String jobName, final int currentShardingTotalCount) {
         currentShardingTotalCountMap.put(jobName, currentShardingTotalCount);
     }
-    
+
     /**
      * 终止任务调度.
-     * 
+     *
      * @param jobName 作业名称
      */
     public void shutdown(final String jobName) {
@@ -175,10 +175,10 @@ public final class JobRegistry {
         jobRunningMap.remove(jobName);
         currentShardingTotalCountMap.remove(jobName);
     }
-    
+
     /**
      * 判断任务调度是否已终止.
-     * 
+     *
      * @param jobName 作业名称
      * @return 任务调度是否已终止
      */

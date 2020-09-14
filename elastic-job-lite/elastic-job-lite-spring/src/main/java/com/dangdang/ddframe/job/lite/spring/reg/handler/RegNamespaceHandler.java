@@ -22,11 +22,11 @@ import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
 /**
  * 注册中心的命名空间处理器.
- * 
+ *
  * @author zhangliang
  */
-public final class RegNamespaceHandler extends NamespaceHandlerSupport {
-    
+public final class RegNamespaceHandler extends NamespaceHandlerSupport {//注册中心标签的解析
+
     @Override
     public void init() {
         registerBeanDefinitionParser("zookeeper", new ZookeeperBeanDefinitionParser());

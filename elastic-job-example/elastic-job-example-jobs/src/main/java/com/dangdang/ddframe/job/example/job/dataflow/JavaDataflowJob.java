@@ -27,23 +27,24 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-public class JavaDataflowJob implements DataflowJob<Foo> {
-    
+public class JavaDataflowJob implements DataflowJob<Foo> {//分两步，只有上一步有结果不为空的时候，下面的才会执行
+
     private FooRepository fooRepository = FooRepositoryFactory.getFooRepository();
-    
+
     @Override
     public List<Foo> fetchData(final ShardingContext shardingContext) {
-        System.out.println(String.format("Item: %s | Time: %s | Thread: %s | %s",
-                shardingContext.getShardingItem(), new SimpleDateFormat("HH:mm:ss").format(new Date()), Thread.currentThread().getId(), "DATAFLOW FETCH"));
-        return fooRepository.findTodoData(shardingContext.getShardingParameter(), 10);
+        List<Foo> todoData = fooRepository.findTodoData(shardingContext.getShardingParameter(), 10);
+        System.out.println(String.format("Item: %s | Time: %s | Thread: %s | %s | 结果集大小%s",
+                shardingContext.getShardingItem(), new SimpleDateFormat("HH:mm:ss").format(new Date()), Thread.currentThread().getId(), "DATAFLOW FETCH",todoData.size()));
+        return todoData;
     }
-    
+
     @Override
     public void processData(final ShardingContext shardingContext, final List<Foo> data) {
         System.out.println(String.format("Item: %s | Time: %s | Thread: %s | %s",
                 shardingContext.getShardingItem(), new SimpleDateFormat("HH:mm:ss").format(new Date()), Thread.currentThread().getId(), "DATAFLOW PROCESS"));
         for (Foo each : data) {
-            fooRepository.setCompleted(each.getId());
+            fooRepository.setCompleted(each.getId());//标记位处理过的
         }
     }
 }

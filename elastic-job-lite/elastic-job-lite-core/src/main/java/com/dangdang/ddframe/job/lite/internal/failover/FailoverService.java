@@ -33,27 +33,27 @@ import java.util.List;
 
 /**
  * 作业失效转移服务.
- * 
+ *
  * @author zhangliang
  */
 @Slf4j
 public final class FailoverService {
-    
+
     private final String jobName;
-    
+
     private final JobNodeStorage jobNodeStorage;
-    
+
     private final ShardingService shardingService;
-    
+
     public FailoverService(final CoordinatorRegistryCenter regCenter, final String jobName) {
         this.jobName = jobName;
         jobNodeStorage = new JobNodeStorage(regCenter, jobName);
         shardingService = new ShardingService(regCenter, jobName);
     }
-    
+
     /**
      * 设置失效的分片项标记.
-     * 
+     *
      * @param item 崩溃的作业项
      */
     public void setCrashedFailoverFlag(final int item) {
@@ -61,11 +61,11 @@ public final class FailoverService {
             jobNodeStorage.createJobNodeIfNeeded(FailoverNode.getItemsNode(item));
         }
     }
-    
+
     private boolean isFailoverAssigned(final Integer item) {
         return jobNodeStorage.isJobNodeExisted(FailoverNode.getExecutionFailoverNode(item));
     }
-    
+
     /**
      * 如果需要失效转移, 则执行作业失效转移.
      */
@@ -74,15 +74,15 @@ public final class FailoverService {
             jobNodeStorage.executeInLeader(FailoverNode.LATCH, new FailoverLeaderExecutionCallback());
         }
     }
-    
+
     private boolean needFailover() {
         return jobNodeStorage.isJobNodeExisted(FailoverNode.ITEMS_ROOT) && !jobNodeStorage.getJobNodeChildrenKeys(FailoverNode.ITEMS_ROOT).isEmpty()
                 && !JobRegistry.getInstance().isJobRunning(jobName);
     }
-    
+
     /**
      * 更新执行完毕失效转移的分片项状态.
-     * 
+     *
      * @param items 执行完毕失效转移的分片项集合
      */
     public void updateFailoverComplete(final Collection<Integer> items) {
@@ -90,7 +90,7 @@ public final class FailoverService {
             jobNodeStorage.removeJobNodeIfExisted(FailoverNode.getExecutionFailoverNode(each));
         }
     }
-    
+
     /**
      * 获取作业服务器的失效转移分片项集合.
      *
@@ -98,11 +98,11 @@ public final class FailoverService {
      * @return 作业失效转移的分片项集合
      */
     public List<Integer> getFailoverItems(final String jobInstanceId) {
-        List<String> items = jobNodeStorage.getJobNodeChildrenKeys(ShardingNode.ROOT);
+        List<String> items = jobNodeStorage.getJobNodeChildrenKeys(ShardingNode.ROOT);//jobname/sharding下的全部分片列表
         List<Integer> result = new ArrayList<>(items.size());
         for (String each : items) {
             int item = Integer.parseInt(each);
-            String node = FailoverNode.getExecutionFailoverNode(item);
+            String node = FailoverNode.getExecutionFailoverNode(item);//sharding/%s/failover
             if (jobNodeStorage.isJobNodeExisted(node) && jobInstanceId.equals(jobNodeStorage.getJobNodeDataDirectly(node))) {
                 result.add(item);
             }
@@ -110,10 +110,10 @@ public final class FailoverService {
         Collections.sort(result);
         return result;
     }
-    
+
     /**
      * 获取运行在本作业服务器的失效转移分片项集合.
-     * 
+     *
      * @return 运行在本作业服务器的失效转移分片项集合
      */
     public List<Integer> getLocalFailoverItems() {
@@ -122,10 +122,10 @@ public final class FailoverService {
         }
         return getFailoverItems(JobRegistry.getInstance().getJobInstance(jobName).getJobInstanceId());
     }
-    
+
     /**
      * 获取运行在本作业服务器的被失效转移的序列号.
-     * 
+     *
      * @return 运行在本作业服务器的被失效转移的序列号
      */
     public List<Integer> getLocalTakeOffItems() {
@@ -138,7 +138,7 @@ public final class FailoverService {
         }
         return result;
     }
-    
+
     /**
      * 删除作业失效转移信息.
      */
@@ -147,9 +147,9 @@ public final class FailoverService {
             jobNodeStorage.removeJobNodeIfExisted(FailoverNode.getExecutionFailoverNode(Integer.parseInt(each)));
         }
     }
-    
+
     class FailoverLeaderExecutionCallback implements LeaderExecutionCallback {
-        
+
         @Override
         public void execute() {
             if (JobRegistry.getInstance().isShutdown(jobName) || !needFailover()) {

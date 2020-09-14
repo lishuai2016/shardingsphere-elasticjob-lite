@@ -13,14 +13,14 @@ import org.quartz.JobExecutionException;
  *
  * @author zhangliang
  */
-public final class LiteJob implements Job {
-    
+public final class LiteJob implements Job {//整合进quartz入口
+
     @Setter
-    private ElasticJob elasticJob;
-    
+    private ElasticJob elasticJob;//自己的业务job
+
     @Setter
     private JobFacade jobFacade;
-    
+
     @Override
     public void execute(final JobExecutionContext context) throws JobExecutionException {
         JobExecutorFactory.getJobExecutor(elasticJob, jobFacade).execute();

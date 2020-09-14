@@ -23,50 +23,50 @@ import lombok.ToString;
 
 /**
  * 分片上下文.
- * 
+ *
  * @author zhangliang
  */
 @Getter
 @ToString
 public final class ShardingContext {
-    
+
     /**
      * 作业名称.
      */
     private final String jobName;
-    
+
     /**
      * 作业任务ID.
      */
     private final String taskId;
-    
+
     /**
      * 分片总数.
      */
     private final int shardingTotalCount;
-    
+
     /**
      * 作业自定义参数.
      * 可以配置多个相同的作业, 但是用不同的参数作为不同的调度实例.
      */
     private final String jobParameter;
-    
+
     /**
      * 分配于本作业实例的分片项.
      */
     private final int shardingItem;
-    
+
     /**
      * 分配于本作业实例的分片参数.
      */
     private final String shardingParameter;
-    
+
     public ShardingContext(final ShardingContexts shardingContexts, final int shardingItem) {
-        jobName = shardingContexts.getJobName();
-        taskId = shardingContexts.getTaskId();
-        shardingTotalCount = shardingContexts.getShardingTotalCount();
+        jobName = shardingContexts.getJobName();//任务名称
+        taskId = shardingContexts.getTaskId();//任务id
+        shardingTotalCount = shardingContexts.getShardingTotalCount();//总分片数
         jobParameter = shardingContexts.getJobParameter();
-        this.shardingItem = shardingItem;
-        shardingParameter = shardingContexts.getShardingItemParameters().get(shardingItem);
+        this.shardingItem = shardingItem;//当前分片号
+        shardingParameter = shardingContexts.getShardingItemParameters().get(shardingItem);//对应该分片的参数
     }
 }

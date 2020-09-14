@@ -25,9 +25,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnExpression("'${regCenter.serverList}'.length() > 0")
+@ConditionalOnExpression("'${regCenter.serverList}'.length() > 0")//基于配置来开启
 public class RegistryCenterConfig {
-    
+
     @Bean(initMethod = "init")
     public ZookeeperRegistryCenter regCenter(@Value("${regCenter.serverList}") final String serverList, @Value("${regCenter.namespace}") final String namespace) {
         return new ZookeeperRegistryCenter(new ZookeeperConfiguration(serverList, namespace));

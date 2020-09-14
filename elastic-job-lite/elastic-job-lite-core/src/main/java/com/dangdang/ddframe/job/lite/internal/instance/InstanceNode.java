@@ -22,27 +22,27 @@ import com.dangdang.ddframe.job.lite.internal.storage.JobNodePath;
 
 /**
  * 运行实例节点路径.
- * 
+ *
  * @author zhangliang
  */
 public final class InstanceNode {
-    
+
     /**
      * 运行实例信息根节点.
      */
     public static final String ROOT = "instances";
-    
+
     private static final String INSTANCES = ROOT + "/%s";
-    
+
     private final String jobName;
-    
+
     private final JobNodePath jobNodePath;
-    
+
     public InstanceNode(final String jobName) {
         this.jobName = jobName;
         jobNodePath = new JobNodePath(jobName);
     }
-    
+
     /**
      * 获取作业运行实例全路径.
      *
@@ -51,7 +51,7 @@ public final class InstanceNode {
     public String getInstanceFullPath() {
         return jobNodePath.getFullPath(InstanceNode.ROOT);
     }
-    
+
     /**
      * 判断给定路径是否为作业运行实例路径.
      *
@@ -59,13 +59,13 @@ public final class InstanceNode {
      * @return 是否为作业运行实例路径
      */
     public boolean isInstancePath(final String path) {
-        return path.startsWith(jobNodePath.getFullPath(InstanceNode.ROOT));
+        return path.startsWith(jobNodePath.getFullPath(InstanceNode.ROOT));//jobName/instances
     }
-    
+
     boolean isLocalInstancePath(final String path) {
         return path.equals(jobNodePath.getFullPath(String.format(INSTANCES, JobRegistry.getInstance().getJobInstance(jobName).getJobInstanceId())));
     }
-    
+
     String getLocalInstanceNode() {
         return String.format(INSTANCES, JobRegistry.getInstance().getJobInstance(jobName).getJobInstanceId());
     }

@@ -50,45 +50,45 @@ import java.util.Properties;
 
 /**
  * 作业调度器.
- * 
+ *
  * @author zhangliang
  * @author caohao
  */
 public class JobScheduler {
-    
+
     public static final String ELASTIC_JOB_DATA_MAP_KEY = "elasticJob";
-    
+
     private static final String JOB_FACADE_DATA_MAP_KEY = "jobFacade";
-    
+
     private final LiteJobConfiguration liteJobConfig;
-    
+
     private final CoordinatorRegistryCenter regCenter;
-    
+
     // TODO 为测试使用,测试用例不能反复new monitor service,以后需要把MonitorService重构为单例
     @Getter
     private final SchedulerFacade schedulerFacade;
-    
+
     private final JobFacade jobFacade;
-    
+
     public JobScheduler(final CoordinatorRegistryCenter regCenter, final LiteJobConfiguration liteJobConfig, final ElasticJobListener... elasticJobListeners) {
         this(regCenter, liteJobConfig, new JobEventBus(), elasticJobListeners);
     }
-    
-    public JobScheduler(final CoordinatorRegistryCenter regCenter, final LiteJobConfiguration liteJobConfig, final JobEventConfiguration jobEventConfig, 
+
+    public JobScheduler(final CoordinatorRegistryCenter regCenter, final LiteJobConfiguration liteJobConfig, final JobEventConfiguration jobEventConfig,
                         final ElasticJobListener... elasticJobListeners) {
         this(regCenter, liteJobConfig, new JobEventBus(jobEventConfig), elasticJobListeners);
     }
-    
+
     private JobScheduler(final CoordinatorRegistryCenter regCenter, final LiteJobConfiguration liteJobConfig, final JobEventBus jobEventBus, final ElasticJobListener... elasticJobListeners) {
-        JobRegistry.getInstance().addJobInstance(liteJobConfig.getJobName(), new JobInstance());
-        this.liteJobConfig = liteJobConfig;
-        this.regCenter = regCenter;
-        List<ElasticJobListener> elasticJobListenerList = Arrays.asList(elasticJobListeners);
-        setGuaranteeServiceForElasticJobListeners(regCenter, elasticJobListenerList);
-        schedulerFacade = new SchedulerFacade(regCenter, liteJobConfig.getJobName(), elasticJobListenerList);
-        jobFacade = new LiteJobFacade(regCenter, liteJobConfig.getJobName(), Arrays.asList(elasticJobListeners), jobEventBus);
+        JobRegistry.getInstance().addJobInstance(liteJobConfig.getJobName(), new JobInstance());//添加到作业注册表map中
+        this.liteJobConfig = liteJobConfig;//配置
+        this.regCenter = regCenter;//注册中心
+        List<ElasticJobListener> elasticJobListenerList = Arrays.asList(elasticJobListeners);//监听器列表
+        setGuaranteeServiceForElasticJobListeners(regCenter, elasticJobListenerList);//
+        schedulerFacade = new SchedulerFacade(regCenter, liteJobConfig.getJobName(), elasticJobListenerList);//
+        jobFacade = new LiteJobFacade(regCenter, liteJobConfig.getJobName(), Arrays.asList(elasticJobListeners), jobEventBus);//
     }
-    
+
     private void setGuaranteeServiceForElasticJobListeners(final CoordinatorRegistryCenter regCenter, final List<ElasticJobListener> elasticJobListeners) {
         GuaranteeService guaranteeService = new GuaranteeService(regCenter, liteJobConfig.getJobName());
         for (ElasticJobListener each : elasticJobListeners) {
@@ -97,23 +97,26 @@ public class JobScheduler {
             }
         }
     }
-    
+
     /**
      * 初始化作业.
      */
     public void init() {
-        LiteJobConfiguration liteJobConfigFromRegCenter = schedulerFacade.updateJobConfiguration(liteJobConfig);
+        LiteJobConfiguration liteJobConfigFromRegCenter = schedulerFacade.updateJobConfiguration(liteJobConfig);//把配置信息持久化到zk，然后再查询出来
+        //在本地map中设置job的分片数
         JobRegistry.getInstance().setCurrentShardingTotalCount(liteJobConfigFromRegCenter.getJobName(), liteJobConfigFromRegCenter.getTypeConfig().getCoreConfig().getShardingTotalCount());
+        //本地调度的封装quartz中对应的三个角色：Scheduler、JobDetail、trigger
         JobScheduleController jobScheduleController = new JobScheduleController(
                 createScheduler(), createJobDetail(liteJobConfigFromRegCenter.getTypeConfig().getJobClass()), liteJobConfigFromRegCenter.getJobName());
+        //本地map维护jobname对应的调度controller
         JobRegistry.getInstance().registerJob(liteJobConfigFromRegCenter.getJobName(), jobScheduleController, regCenter);
-        schedulerFacade.registerStartUpInfo(!liteJobConfigFromRegCenter.isDisabled());
-        jobScheduleController.scheduleJob(liteJobConfigFromRegCenter.getTypeConfig().getCoreConfig().getCron());
+        schedulerFacade.registerStartUpInfo(!liteJobConfigFromRegCenter.isDisabled());//注册作业启动信息【重点】
+        jobScheduleController.scheduleJob(liteJobConfigFromRegCenter.getTypeConfig().getCoreConfig().getCron());//基于cron调度job
     }
-    
-    private JobDetail createJobDetail(final String jobClass) {
+
+    private JobDetail createJobDetail(final String jobClass) {//创建一个job
         JobDetail result = JobBuilder.newJob(LiteJob.class).withIdentity(liteJobConfig.getJobName()).build();
-        result.getJobDataMap().put(JOB_FACADE_DATA_MAP_KEY, jobFacade);
+        result.getJobDataMap().put(JOB_FACADE_DATA_MAP_KEY, jobFacade);//放入参数映射到对象的属性上
         Optional<ElasticJob> elasticJobInstance = createElasticJobInstance();
         if (elasticJobInstance.isPresent()) {
             result.getJobDataMap().put(ELASTIC_JOB_DATA_MAP_KEY, elasticJobInstance.get());
@@ -126,12 +129,12 @@ public class JobScheduler {
         }
         return result;
     }
-    
-    protected Optional<ElasticJob> createElasticJobInstance() {
+
+    protected Optional<ElasticJob> createElasticJobInstance() {//功能？
         return Optional.absent();
     }
-    
-    private Scheduler createScheduler() {
+
+    private Scheduler createScheduler() {//创建quartz的调度器
         Scheduler result;
         try {
             StdSchedulerFactory factory = new StdSchedulerFactory();
@@ -143,11 +146,11 @@ public class JobScheduler {
         }
         return result;
     }
-    
-    private Properties getBaseQuartzProperties() {
+
+    private Properties getBaseQuartzProperties() {//基本参数
         Properties result = new Properties();
         result.put("org.quartz.threadPool.class", org.quartz.simpl.SimpleThreadPool.class.getName());
-        result.put("org.quartz.threadPool.threadCount", "1");
+        result.put("org.quartz.threadPool.threadCount", "1");//这里的线程池大小为1，那有多少个job就需要初始化多少个Scheduler实例对象
         result.put("org.quartz.scheduler.instanceName", liteJobConfig.getJobName());
         result.put("org.quartz.jobStore.misfireThreshold", "1");
         result.put("org.quartz.plugin.shutdownhook.class", JobShutdownHookPlugin.class.getName());

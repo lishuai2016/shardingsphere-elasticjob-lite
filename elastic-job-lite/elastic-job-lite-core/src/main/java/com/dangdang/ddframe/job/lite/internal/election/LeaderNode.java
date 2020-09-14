@@ -21,28 +21,28 @@ import com.dangdang.ddframe.job.lite.internal.storage.JobNodePath;
 
 /**
  * 主节点路径.
- * 
+ *
  * @author zhangliang
  */
 public final class LeaderNode {
-    
+
     /**
      * 主节点根路径.
      */
     public static final String ROOT = "leader";
-    
+
     static final String ELECTION_ROOT = ROOT + "/election";
-    
-    static final String INSTANCE = ELECTION_ROOT + "/instance";
-    
-    static final String LATCH = ELECTION_ROOT + "/latch";
-    
+
+    static final String INSTANCE = ELECTION_ROOT + "/instance";// leader/election/instance 节点的内容写入leader节点
+
+    static final String LATCH = ELECTION_ROOT + "/latch";//leader/election/latch 分布式锁节点用来选举leader
+
     private final JobNodePath jobNodePath;
-    
+
     LeaderNode(final String jobName) {
         jobNodePath = new JobNodePath(jobName);
     }
-    
+
     boolean isLeaderInstancePath(final String path) {
         return jobNodePath.getFullPath(INSTANCE).equals(path);
     }

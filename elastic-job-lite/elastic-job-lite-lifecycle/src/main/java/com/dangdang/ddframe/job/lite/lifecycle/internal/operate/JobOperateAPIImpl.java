@@ -31,33 +31,33 @@ import java.util.List;
  * @author caohao
  */
 public final class JobOperateAPIImpl implements JobOperateAPI {
-    
+
     private final CoordinatorRegistryCenter regCenter;
-    
+
     public JobOperateAPIImpl(final CoordinatorRegistryCenter regCenter) {
         this.regCenter = regCenter;
     }
-    
+
     @Override
     public void trigger(final Optional<String> jobName, final Optional<String> serverIp) {
         if (jobName.isPresent()) {
             JobNodePath jobNodePath = new JobNodePath(jobName.get());
             for (String each : regCenter.getChildrenKeys(jobNodePath.getInstancesNodePath())) {
-                regCenter.persist(jobNodePath.getInstanceNodePath(each), "TRIGGER");
+                regCenter.persist(jobNodePath.getInstanceNodePath(each), "TRIGGER");//添加一个trigger节点
             }
         }
     }
-    
+
     @Override
     public void disable(final Optional<String> jobName, final Optional<String> serverIp) {
         disableOrEnableJobs(jobName, serverIp, true);
     }
-    
+
     @Override
     public void enable(final Optional<String> jobName, final Optional<String> serverIp) {
         disableOrEnableJobs(jobName, serverIp, false);
     }
-    
+
     private void disableOrEnableJobs(final Optional<String> jobName, final Optional<String> serverIp, final boolean disabled) {
         Preconditions.checkArgument(jobName.isPresent() || serverIp.isPresent(), "At least indicate jobName or serverIp.");
         if (jobName.isPresent() && serverIp.isPresent()) {
@@ -80,7 +80,7 @@ public final class JobOperateAPIImpl implements JobOperateAPI {
             }
         }
     }
-    
+
     private void persistDisabledOrEnabledJob(final String jobName, final String serverIp, final boolean disabled) {
         JobNodePath jobNodePath = new JobNodePath(jobName);
         String serverNodePath = jobNodePath.getServerNodePath(serverIp);
@@ -90,7 +90,7 @@ public final class JobOperateAPIImpl implements JobOperateAPI {
             regCenter.persist(serverNodePath, "");
         }
     }
-    
+
     @Override
     public void shutdown(final Optional<String> jobName, final Optional<String> serverIp) {
         Preconditions.checkArgument(jobName.isPresent() || serverIp.isPresent(), "At least indicate jobName or serverIp.");
@@ -119,7 +119,7 @@ public final class JobOperateAPIImpl implements JobOperateAPI {
             }
         }
     }
-    
+
     @Override
     public void remove(final Optional<String> jobName, final Optional<String> serverIp) {
         shutdown(jobName, serverIp);

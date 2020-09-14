@@ -48,24 +48,41 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 基于Zookeeper的注册中心.
- * 
+ *
  * @author zhangliang
  */
 @Slf4j
 public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter {
-    
+
+    public static void main(String[] args) {
+        System.out.println(1111);
+        String jobName = "com.ls.jd";
+        ZookeeperConfiguration zkConfig = new ZookeeperConfiguration("localhost:2181", "lishuai-test");
+        ZookeeperRegistryCenter registryCenter = new ZookeeperRegistryCenter(zkConfig);
+        registryCenter.init();
+        registryCenter.addCacheData("/" + jobName);
+
+
+
+        while (true) {
+
+        }
+
+    }
+
+
     @Getter(AccessLevel.PROTECTED)
     private ZookeeperConfiguration zkConfig;
-    
-    private final Map<String, TreeCache> caches = new HashMap<>();
-    
+
+    private final Map<String, TreeCache> caches = new HashMap<>();//本地的数缓存
+
     @Getter
     private CuratorFramework client;
-    
+
     public ZookeeperRegistryCenter(final ZookeeperConfiguration zkConfig) {
         this.zkConfig = zkConfig;
     }
-    
+
     @Override
     public void init() {
         log.debug("Elastic job: zookeeper registry center init, server lists is: {}.", zkConfig.getServerLists());
@@ -82,12 +99,12 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         if (!Strings.isNullOrEmpty(zkConfig.getDigest())) {
             builder.authorization("digest", zkConfig.getDigest().getBytes(Charsets.UTF_8))
                     .aclProvider(new ACLProvider() {
-                    
+
                         @Override
                         public List<ACL> getDefaultAcl() {
                             return ZooDefs.Ids.CREATOR_ALL_ACL;
                         }
-                    
+
                         @Override
                         public List<ACL> getAclForPath(final String path) {
                             return ZooDefs.Ids.CREATOR_ALL_ACL;
@@ -107,7 +124,7 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
     public void close() {
         for (Entry<String, TreeCache> each : caches.entrySet()) {
@@ -116,7 +133,7 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         waitForCacheClose();
         CloseableUtils.closeQuietly(client);
     }
-    
+
     /* TODO 等待500ms, cache先关闭再关闭client, 否则会抛异常
      * 因为异步处理, 可能会导致client先关闭而cache还未关闭结束.
      * 等待Curator新版本解决这个bug.
@@ -129,12 +146,12 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             Thread.currentThread().interrupt();
         }
     }
-    
+
     @Override
     public String get(final String key) {
-        TreeCache cache = findTreeCache(key);
+        TreeCache cache = findTreeCache(key);//查看缓存中是否存在
         if (null == cache) {
-            return getDirectly(key);
+            return getDirectly(key);//缓存没有直接获取
         }
         ChildData resultInCache = cache.getCurrentData(key);
         if (null != resultInCache) {
@@ -142,18 +159,18 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         }
         return getDirectly(key);
     }
-    
+
     private TreeCache findTreeCache(final String key) {
         for (Entry<String, TreeCache> entry : caches.entrySet()) {
-            if (key.startsWith(entry.getKey())) {
+            if (key.startsWith(entry.getKey())) {//这里怎么不是全匹配？
                 return entry.getValue();
             }
         }
         return null;
     }
-    
+
     @Override
-    public String getDirectly(final String key) {
+    public String getDirectly(final String key) {//获取一个节点的数据
         try {
             return new String(client.getData().forPath(key), Charsets.UTF_8);
         //CHECKSTYLE:OFF
@@ -163,13 +180,13 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             return null;
         }
     }
-    
+
     @Override
     public List<String> getChildrenKeys(final String key) {
         try {
-            List<String> result = client.getChildren().forPath(key);
+            List<String> result = client.getChildren().forPath(key);//获取一个节点下的子节点列表
             Collections.sort(result, new Comparator<String>() {
-                
+
                 @Override
                 public int compare(final String o1, final String o2) {
                     return o2.compareTo(o1);
@@ -183,13 +200,13 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             return Collections.emptyList();
         }
     }
-    
+
     @Override
     public int getNumChildren(final String key) {
         try {
-            Stat stat = client.checkExists().forPath(key);
+            Stat stat = client.checkExists().forPath(key);//查看节点的状态
             if (null != stat) {
-                return stat.getNumChildren();
+                return stat.getNumChildren();//返回子节点数
             }
             //CHECKSTYLE:OFF
         } catch (final Exception ex) {
@@ -202,7 +219,7 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
     @Override
     public boolean isExisted(final String key) {
         try {
-            return null != client.checkExists().forPath(key);
+            return null != client.checkExists().forPath(key);//判断节点是否存在
         //CHECKSTYLE:OFF
         } catch (final Exception ex) {
         //CHECKSTYLE:ON
@@ -210,11 +227,11 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             return false;
         }
     }
-    
+
     @Override
     public void persist(final String key, final String value) {
         try {
-            if (!isExisted(key)) {
+            if (!isExisted(key)) {//不存在创建，持久化节点
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(key, value.getBytes(Charsets.UTF_8));
             } else {
                 update(key, value);
@@ -225,9 +242,9 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
-    public void update(final String key, final String value) {
+    public void update(final String key, final String value) {//更新节点的数据
         try {
             client.inTransaction().check().forPath(key).and().setData().forPath(key, value.getBytes(Charsets.UTF_8)).and().commit();
         //CHECKSTYLE:OFF
@@ -236,11 +253,11 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
-    public void persistEphemeral(final String key, final String value) {
+    public void persistEphemeral(final String key, final String value) {//创建临时节点
         try {
-            if (isExisted(key)) {
+            if (isExisted(key)) {//存在节点先删除
                 client.delete().deletingChildrenIfNeeded().forPath(key);
             }
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL).forPath(key, value.getBytes(Charsets.UTF_8));
@@ -250,9 +267,9 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
-    public String persistSequential(final String key, final String value) {
+    public String persistSequential(final String key, final String value) {//持久顺序节点
         try {
             return client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT_SEQUENTIAL).forPath(key, value.getBytes(Charsets.UTF_8));
         //CHECKSTYLE:OFF
@@ -262,9 +279,9 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         }
         return null;
     }
-    
+
     @Override
-    public void persistEphemeralSequential(final String key) {
+    public void persistEphemeralSequential(final String key) {//临时顺序节点
         try {
             client.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL).forPath(key);
         //CHECKSTYLE:OFF
@@ -273,9 +290,9 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
-    public void remove(final String key) {
+    public void remove(final String key) {//删除节点
         try {
             client.delete().deletingChildrenIfNeeded().forPath(key);
         //CHECKSTYLE:OFF
@@ -284,9 +301,9 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             RegExceptionHandler.handleException(ex);
         }
     }
-    
+
     @Override
-    public long getRegistryCenterTime(final String key) {
+    public long getRegistryCenterTime(final String key) {//获取注册中心的时间。通过创建一个节点获取
         long result = 0L;
         try {
             persist(key, "");
@@ -299,14 +316,14 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         Preconditions.checkState(0L != result, "Cannot get registry center time.");
         return result;
     }
-    
+
     @Override
     public Object getRawClient() {
         return client;
     }
-    
+
     @Override
-    public void addCacheData(final String cachePath) {
+    public void addCacheData(final String cachePath) {//添加缓存数据接口？持续监控key
         TreeCache cache = new TreeCache(client, cachePath);
         try {
             cache.start();
@@ -317,7 +334,7 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
         }
         caches.put(cachePath + "/", cache);
     }
-    
+
     @Override
     public void evictCacheData(final String cachePath) {
         TreeCache cache = caches.remove(cachePath + "/");
@@ -325,7 +342,7 @@ public final class ZookeeperRegistryCenter implements CoordinatorRegistryCenter 
             cache.close();
         }
     }
-    
+
     @Override
     public Object getRawCache(final String cachePath) {
         return caches.get(cachePath + "/");

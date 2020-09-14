@@ -34,31 +34,31 @@ import java.util.List;
 
 /**
  * 为调度器提供内部服务的门面类.
- * 
+ *
  * @author zhangliang
  */
 public final class SchedulerFacade {
-    
+
     private final String jobName;
-    
-    private final ConfigurationService configService;
-    
-    private final LeaderService leaderService;
-    
-    private final ServerService serverService;
-    
-    private final InstanceService instanceService;
-    
-    private final ShardingService shardingService;
-    
-    private final ExecutionService executionService;
-    
-    private final MonitorService monitorService;
-    
-    private final ReconcileService reconcileService;
-    
-    private ListenerManager listenerManager;
-    
+
+    private final ConfigurationService configService;//弹性化分布式作业配置服务
+
+    private final LeaderService leaderService;//主节点服务
+
+    private final ServerService serverService;//作业服务器服务
+
+    private final InstanceService instanceService;//作业运行实例服务
+
+    private final ShardingService shardingService;//作业分片服务
+
+    private final ExecutionService executionService;//执行作业的服务
+
+    private final MonitorService monitorService;//作业监控服务
+
+    private final ReconcileService reconcileService;//调解分布式作业不一致状态服务
+
+    private ListenerManager listenerManager;//作业注册中心的监听器管理者
+
     public SchedulerFacade(final CoordinatorRegistryCenter regCenter, final String jobName) {
         this.jobName = jobName;
         configService = new ConfigurationService(regCenter, jobName);
@@ -70,7 +70,7 @@ public final class SchedulerFacade {
         monitorService = new MonitorService(regCenter, jobName);
         reconcileService = new ReconcileService(regCenter, jobName);
     }
-    
+
     public SchedulerFacade(final CoordinatorRegistryCenter regCenter, final String jobName, final List<ElasticJobListener> elasticJobListeners) {
         this.jobName = jobName;
         configService = new ConfigurationService(regCenter, jobName);
@@ -81,9 +81,9 @@ public final class SchedulerFacade {
         executionService = new ExecutionService(regCenter, jobName);
         monitorService = new MonitorService(regCenter, jobName);
         reconcileService = new ReconcileService(regCenter, jobName);
-        listenerManager = new ListenerManager(regCenter, jobName, elasticJobListeners);
+        listenerManager = new ListenerManager(regCenter, jobName, elasticJobListeners);//包装zk的监听器管理类
     }
-    
+
     /**
      * 获取作业触发监听器.
      *
@@ -92,7 +92,7 @@ public final class SchedulerFacade {
     public JobTriggerListener newJobTriggerListener() {
         return new JobTriggerListener(executionService, shardingService);
     }
-    
+
     /**
      * 更新作业配置.
      *
@@ -103,24 +103,24 @@ public final class SchedulerFacade {
         configService.persist(liteJobConfig);
         return configService.load(false);
     }
-    
+
     /**
      * 注册作业启动信息.
-     * 
+     *
      * @param enabled 作业是否启用
      */
     public void registerStartUpInfo(final boolean enabled) {
-        listenerManager.startAllListeners();
-        leaderService.electLeader();
-        serverService.persistOnline(enabled);
-        instanceService.persistOnline();
-        shardingService.setReshardingFlag();
-        monitorService.listen();
+        listenerManager.startAllListeners();//注册zk的监听器
+        leaderService.electLeader();//选举leader节点ip
+        serverService.persistOnline(enabled);//创建 jobname/servers/ip节点
+        instanceService.persistOnline();//创建 jobname/instances/ip@-@pid节点
+        shardingService.setReshardingFlag();//设置需要进行分片标记leader/sharding/necessary
+        monitorService.listen();//
         if (!reconcileService.isRunning()) {
             reconcileService.startAsync();
         }
     }
-    
+
     /**
      * 终止作业调度.
      */

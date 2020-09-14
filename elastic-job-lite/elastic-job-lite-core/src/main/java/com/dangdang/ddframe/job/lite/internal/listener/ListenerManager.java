@@ -33,31 +33,31 @@ import java.util.List;
 
 /**
  * 作业注册中心的监听器管理者.
- * 
+ *
  * @author zhangliang
  */
-public final class ListenerManager {
-    
+public final class ListenerManager {//
+
     private final JobNodeStorage jobNodeStorage;
-    
+
     private final ElectionListenerManager electionListenerManager;
-    
+
     private final ShardingListenerManager shardingListenerManager;
-    
+
     private final FailoverListenerManager failoverListenerManager;
-    
+
     private final MonitorExecutionListenerManager monitorExecutionListenerManager;
-    
+
     private final ShutdownListenerManager shutdownListenerManager;
-    
+
     private final TriggerListenerManager triggerListenerManager;
-    
+
     private final RescheduleListenerManager rescheduleListenerManager;
 
     private final GuaranteeListenerManager guaranteeListenerManager;
-    
+
     private final RegistryCenterConnectionStateListener regCenterConnectionStateListener;
-    
+
     public ListenerManager(final CoordinatorRegistryCenter regCenter, final String jobName, final List<ElasticJobListener> elasticJobListeners) {
         jobNodeStorage = new JobNodeStorage(regCenter, jobName);
         electionListenerManager = new ElectionListenerManager(regCenter, jobName);
@@ -67,10 +67,10 @@ public final class ListenerManager {
         shutdownListenerManager = new ShutdownListenerManager(regCenter, jobName);
         triggerListenerManager = new TriggerListenerManager(regCenter, jobName);
         rescheduleListenerManager = new RescheduleListenerManager(regCenter, jobName);
-        guaranteeListenerManager = new GuaranteeListenerManager(regCenter, jobName, elasticJobListeners);
+        guaranteeListenerManager = new GuaranteeListenerManager(regCenter, jobName, elasticJobListeners);//参数只影响这一个
         regCenterConnectionStateListener = new RegistryCenterConnectionStateListener(regCenter, jobName);
     }
-    
+
     /**
      * 开启所有监听器.
      */

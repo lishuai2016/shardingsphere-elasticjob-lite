@@ -27,31 +27,32 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 作业核心配置.
- * 
+ *
  * @author zhangliang
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public final class JobCoreConfiguration {
-    
-    private final String jobName;
-    
-    private final String cron;
-    
-    private final int shardingTotalCount;
-    
+
+    private final String jobName;//作业名称。【构造器参数】
+
+    private final String cron;//cron表达式，用于控制作业触发时间【构造器参数】
+
+    private final int shardingTotalCount;//作业分片总数 【构造器参数】
+    //分片序列号和参数用等号分隔，多个键值对用逗号分隔分片序列号从0开始，不可大于或等于作业分片总数如：0=a,1=b,2=c
     private final String shardingItemParameters;
-    
+    //作业自定义参数作业自定义参数，可通过传递该参数为作业调度的业务方法传参，
+    // 用于实现带参数的作业例：每次获取的数据量、作业实例从数据库读取的主键等
     private final String jobParameter;
-    
+    //是否开启任务执行失效转移，开启表示如果作业在一次任务执行中途宕机，允许将该次未完成的任务在另一作业节点上补偿执行
     private final boolean failover;
-    
+    //是否开启错过任务重新执行
     private final boolean misfire;
-    
+    //作业描述信息
     private final String description;
-    
+
     private final JobProperties jobProperties;
-    
+
     /**
      * 创建简单作业配置构建器.
      *
@@ -63,28 +64,28 @@ public final class JobCoreConfiguration {
     public static Builder newBuilder(final String jobName, final String cron, final int shardingTotalCount) {
         return new Builder(jobName, cron, shardingTotalCount);
     }
-    
+
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     public static class Builder {
-        
+
         private final String jobName;
-        
+
         private final String cron;
-        
+
         private final int shardingTotalCount;
-        
-        private String shardingItemParameters = "";
-        
+
+        private String shardingItemParameters = "";//设置的分配参数
+
         private String jobParameter = "";
-        
+
         private boolean failover;
-        
+
         private boolean misfire = true;
-        
+
         private String description = "";
-        
+
         private final JobProperties jobProperties = new JobProperties();
-        
+
         /**
          * 设置分片序列号和个性化参数对照表.
          *
@@ -105,7 +106,7 @@ public final class JobCoreConfiguration {
             }
             return this;
         }
-        
+
         /**
          * 设置作业自定义参数.
          *
@@ -123,13 +124,13 @@ public final class JobCoreConfiguration {
             }
             return this;
         }
-        
+
         /**
          * 设置是否开启失效转移.
          *
          * <p>
          * 只有对monitorExecution的情况下才可以开启失效转移.
-         * </p> 
+         * </p>
          *
          * @param failover 是否开启失效转移
          *
@@ -139,7 +140,7 @@ public final class JobCoreConfiguration {
             this.failover = failover;
             return this;
         }
-        
+
         /**
          * 设置是否开启misfire.
          *
@@ -151,7 +152,7 @@ public final class JobCoreConfiguration {
             this.misfire = misfire;
             return this;
         }
-        
+
         /**
          * 设置作业描述信息.
          *
@@ -165,7 +166,7 @@ public final class JobCoreConfiguration {
             }
             return this;
         }
-        
+
         /**
          * 设置作业属性.
          *
@@ -178,7 +179,7 @@ public final class JobCoreConfiguration {
             jobProperties.put(key, value);
             return this;
         }
-        
+
         /**
          * 构建作业配置对象.
          *

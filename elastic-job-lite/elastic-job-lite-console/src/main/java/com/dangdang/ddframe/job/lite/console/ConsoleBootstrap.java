@@ -28,18 +28,20 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 界面启动器.
- *
+ * 需要先启动本地的zookeeper
+ * http://localhost:8899/
+ * 账户和密码：root/root
  * @author caohao
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public final class ConsoleBootstrap {
-    
+
     private static final String CONSOLE_PATH = "console";
-    
+
     /**
      * 启动RESTful服务并加载页面.
-     * 
+     *
      * @param args 启动参数
      * @throws Exception 启动服务器异常
      */

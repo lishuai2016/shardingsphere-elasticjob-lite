@@ -26,32 +26,32 @@ import org.apache.curator.framework.recipes.cache.TreeCacheEvent.Type;
 
 /**
  * 幂等性监听管理器.
- * 
+ *
  * @author zhangliang
  */
 public final class MonitorExecutionListenerManager extends AbstractListenerManager {
-    
+
     private final ExecutionService executionService;
-    
+
     private final ConfigurationNode configNode;
-    
+
     public MonitorExecutionListenerManager(final CoordinatorRegistryCenter regCenter, final String jobName) {
         super(regCenter, jobName);
         executionService = new ExecutionService(regCenter, jobName);
         configNode = new ConfigurationNode(jobName);
     }
-    
+
     @Override
     public void start() {
         addDataListener(new MonitorExecutionSettingsChangedJobListener());
     }
-    
+
     class MonitorExecutionSettingsChangedJobListener extends AbstractJobListener {
-        
+
         @Override
-        protected void dataChanged(final String path, final Type eventType, final String data) {
+        protected void dataChanged(final String path, final Type eventType, final String data) {//配置有更新
             if (configNode.isConfigPath(path) && Type.NODE_UPDATED == eventType && !LiteJobConfigurationGsonFactory.fromJson(data).isMonitorExecution()) {
-                executionService.clearAllRunningInfo();
+                executionService.clearAllRunningInfo();//清除节点 sharding/0/running
             }
         }
     }

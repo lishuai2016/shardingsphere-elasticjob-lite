@@ -26,17 +26,17 @@ import java.util.concurrent.ExecutorService;
 
 /**
  * 线程池服务处理器注册表.
- * 
+ *
  * @author zhangliang
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ExecutorServiceHandlerRegistry {
-    
-    private static final Map<String, ExecutorService> REGISTRY = new HashMap<>();
-    
+
+    private static final Map<String, ExecutorService> REGISTRY = new HashMap<>();//一个job作业对应一个线程池
+
     /**
      * 获取线程池服务.
-     * 
+     *
      * @param jobName 作业名称
      * @param executorServiceHandler 线程池服务处理器
      * @return 线程池服务
@@ -47,7 +47,7 @@ public final class ExecutorServiceHandlerRegistry {
         }
         return REGISTRY.get(jobName);
     }
-    
+
     /**
      * 从注册表中删除该作业线程池服务.
      *

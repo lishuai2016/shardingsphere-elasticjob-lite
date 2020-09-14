@@ -28,21 +28,21 @@ import org.apache.curator.framework.recipes.cache.TreeCacheEvent.Type;
 
 /**
  * 主节点选举监听管理器.
- * 
+ *
  * @author zhangliang
  */
 public final class ElectionListenerManager extends AbstractListenerManager {
-    
+
     private final String jobName;
-    
+
     private final LeaderNode leaderNode;
-    
+
     private final ServerNode serverNode;
-    
+
     private final LeaderService leaderService;
-    
+
     private final ServerService serverService;
-    
+
     public ElectionListenerManager(final CoordinatorRegistryCenter regCenter, final String jobName) {
         super(regCenter, jobName);
         this.jobName = jobName;
@@ -51,48 +51,48 @@ public final class ElectionListenerManager extends AbstractListenerManager {
         leaderService = new LeaderService(regCenter, jobName);
         serverService = new ServerService(regCenter, jobName);
     }
-    
+
     @Override
     public void start() {
-        addDataListener(new LeaderElectionJobListener());
-        addDataListener(new LeaderAbdicationJobListener());
+        addDataListener(new LeaderElectionJobListener());//注册leader选举监听器
+        addDataListener(new LeaderAbdicationJobListener());//注册leader移除监听器（禁用了leader节点）
     }
-    
+
     class LeaderElectionJobListener extends AbstractJobListener {
-        
+
         @Override
         protected void dataChanged(final String path, final Type eventType, final String data) {
             if (!JobRegistry.getInstance().isShutdown(jobName) && (isActiveElection(path, data) || isPassiveElection(path, eventType))) {
                 leaderService.electLeader();
             }
         }
-        
-        private boolean isActiveElection(final String path, final String data) {
-            return !leaderService.hasLeader() && isLocalServerEnabled(path, data);
+
+        private boolean isActiveElection(final String path, final String data) {//【主动选举】
+            return !leaderService.hasLeader() && isLocalServerEnabled(path, data);//1、先判断是否已经存在leader，不存在才继续;2、变化路径为本地作业服务器路径
         }
-        
-        private boolean isPassiveElection(final String path, final Type eventType) {
+
+        private boolean isPassiveElection(final String path, final Type eventType) {//【被动选举】leader节点挂了。并且当前节点IP正常
             return isLeaderCrashed(path, eventType) && serverService.isAvailableServer(JobRegistry.getInstance().getJobInstance(jobName).getIp());
         }
-        
-        private boolean isLeaderCrashed(final String path, final Type eventType) {
+
+        private boolean isLeaderCrashed(final String path, final Type eventType) {//leader节点挂了
             return leaderNode.isLeaderInstancePath(path) && Type.NODE_REMOVED == eventType;
         }
-        
-        private boolean isLocalServerEnabled(final String path, final String data) {
+
+        private boolean isLocalServerEnabled(final String path, final String data) {//判断路径path是本地
             return serverNode.isLocalServerPath(path) && !ServerStatus.DISABLED.name().equals(data);
         }
     }
-    
-    class LeaderAbdicationJobListener extends AbstractJobListener {
-        
+
+    class LeaderAbdicationJobListener extends AbstractJobListener {//Abdication 退位，应该是在zookeeper中禁用了leader节点触发。自己移除自己
+
         @Override
         protected void dataChanged(final String path, final Type eventType, final String data) {
-            if (leaderService.isLeader() && isLocalServerDisabled(path, data)) {
+            if (leaderService.isLeader() && isLocalServerDisabled(path, data)) {//当前IP是leader节点
                 leaderService.removeLeader();
             }
         }
-        
+        //1、判断给定路径是否为本地作业服务器路径；2、禁用该服务IP了
         private boolean isLocalServerDisabled(final String path, final String data) {
             return serverNode.isLocalServerPath(path) && ServerStatus.DISABLED.name().equals(data);
         }
